@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KEY - Tim Burton Canvas Graffiti</title>
-<link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+<title>Homenaje a Samuel</title>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Patrick+Hand&display=swap" rel="stylesheet">
 <style>
   body {
     margin: 0;
@@ -16,14 +16,16 @@
     min-height: 100vh;
     font-family: 'Creepster', cursive;
     color: #a0b0c0;
+    overflow: hidden;
   }
   h3 {
-    font-size: 2.5rem;
-    letter-spacing: 8px;
+    font-size: 2rem;
+    letter-spacing: 5px;
     color: #ce93d8;
-    margin-bottom: 15px;
-    text-shadow: 0 0 20px rgba(123,31,162,0.8);
+    margin-bottom: 10px;
+    text-shadow: 0 0 15px rgba(123,31,162,0.8);
     font-weight: normal;
+    text-align: center;
   }
   #wall {
     position: relative;
@@ -31,8 +33,8 @@
     max-width: 900px;
     aspect-ratio: 16/9;
     background: #050608;
-    border: 6px solid #1a0b2e;
-    box-shadow: 0 0 80px rgba(90, 20, 120, 0.6), inset 0 0 50px #000;
+    border: 4px solid #1a0b2e;
+    box-shadow: 0 0 50px rgba(90, 20, 120, 0.4), inset 0 0 30px #000;
     overflow: hidden;
     border-radius: 8px;
   }
@@ -44,39 +46,94 @@
     height: 100%;
   }
   .controls {
-    margin-top: 20px;
+    margin-top: 15px;
     display: flex;
-    gap: 20px;
+    gap: 15px;
+    z-index: 10;
   }
   button {
     background: #11081a;
     color: #ce93d8;
     border: 2px solid #7b1fa2;
-    padding: 10px 30px;
+    padding: 8px 20px;
     border-radius: 4px;
     font-family: 'Creepster', cursive;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     cursor: pointer;
-    letter-spacing: 2px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(123,31,162,0.3);
   }
   button:hover {
     background: #2a0b45;
     color: #fff;
-    box-shadow: 0 0 25px rgba(123,31,162,0.8);
-    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(123,31,162,0.8);
+  }
+
+  /* ESTILOS DE LA CARTA */
+  #letter-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s ease-in-out;
+    z-index: 20;
+  }
+  #letter-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .letter-content {
+    background: #15101c;
+    border: 2px solid #7b1fa2;
+    border-radius: 10px;
+    padding: 30px;
+    max-width: 80%;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(123,31,162,0.6);
+    font-family: 'Patrick Hand', cursive; /* Letra estilo manuscrita */
+  }
+  .letter-content p {
+    color: #e1bee7;
+    font-size: 1.4rem;
+    line-height: 1.5;
+    margin: 10px 0;
+    text-shadow: 0 0 5px rgba(225, 190, 231, 0.3);
+  }
+  .letter-content .signature {
+    font-size: 1.8rem;
+    color: #ce93d8;
+    margin-top: 20px;
+    font-weight: bold;
+  }
+  .close-btn {
+    margin-top: 20px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 1.2rem;
   }
 </style>
 </head>
 <body>
-<h3>TIM BURTON x KEY</h3>
+<h3>SIEMPRE EN MI CORAZÓN</h3>
 <div id="wall">
-  <!-- 3 Capas para máximo rendimiento -->
+  <!-- Capas separadas = 0 lag -->
   <canvas id="bg"></canvas>
   <canvas id="paint"></canvas>
   <canvas id="fg"></canvas>
+  
+  <!-- CARTA DE DESPEDIDA -->
+  <div id="letter-overlay">
+    <div class="letter-content">
+      <p>"Gracias por haberme elegido y por darme la mejor vida que un michi pudo soñar."</p>
+      <p>"Fui muy feliz a tu lado, por tus caricias, tus cuidados y todo tu amor. No estés triste, ahora soy tu guardián de las estrellas y siempre estaré pintando recuerdos en tu corazón."</p>
+      <p class="signature">Te amaré siempre, Samuel 🐾</p>
+      <button class="close-btn" onclick="closeLetter()">Cerrar</button>
+    </div>
+  </div>
 </div>
+
 <div class="controls">
   <button onclick="start()">▶ PINTAR</button>
   <button onclick="clearCanv()">↺ BORRAR</button>
@@ -86,26 +143,22 @@
 const bg = document.getElementById('bg'), bCtx = bg.getContext('2d');
 const paint = document.getElementById('paint'), pCtx = paint.getContext('2d');
 const fg = document.getElementById('fg'), fCtx = fg.getContext('2d');
+const letterOverlay = document.getElementById('letter-overlay');
 
 function resize() {
   [bg, paint, fg].forEach(c => { c.width = c.offsetWidth * 2; c.height = c.offsetHeight * 2; });
-  // Solo se dibuja el fondo una vez al redimensionar (ahorro de batería brutal)
   drawStaticBackground();
 }
 
 let bats = [
-  {x: 650, y: 120, speed: 1.2, size: 12, wing: 0},
-  {x: 750, y: 80, speed: 1.8, size: 9, wing: 2},
-  {x: 500, y: 160, speed: 1.0, size: 15, wing: 1},
-  {x: 200, y: 100, speed: 1.5, size: 10, wing: 0.5}
-];
+  {x: 650, y: 120, speed: 1.2, size: 10, wing: 0},
+  {x: 300, y: 80, speed: 1.5, size: 8, wing: 1}
+]; // Reducidos a 2 murciélagos para más rendimiento
 
-// Dibujamos todo lo que NO se mueve solo una vez
 function drawStaticBackground() {
   const w = bg.width, h = bg.height;
   bCtx.clearRect(0, 0, w, h);
   
-  // Cielo
   let grad = bCtx.createLinearGradient(0, 0, 0, h * 0.8);
   grad.addColorStop(0, '#020205');
   grad.addColorStop(0.5, '#150822');
@@ -113,15 +166,13 @@ function drawStaticBackground() {
   bCtx.fillStyle = grad;
   bCtx.fillRect(0, 0, w, h);
 
-  // Luna (Sombra optimizada)
   bCtx.save();
-  bCtx.shadowColor = 'rgba(210, 235, 255, 0.8)';
-  bCtx.shadowBlur = 40; 
+  bCtx.shadowColor = 'rgba(210, 235, 255, 0.5)';
+  bCtx.shadowBlur = 20; // Sombra reducida para evitar lag
   bCtx.fillStyle = '#e1f2ff';
-  bCtx.beginPath(); bCtx.arc(w * 0.80, h * 0.25, 80, 0, Math.PI * 2); bCtx.fill();
+  bCtx.beginPath(); bCtx.arc(w * 0.80, h * 0.25, 70, 0, Math.PI * 2); bCtx.fill();
   bCtx.restore();
 
-  // Colina
   bCtx.fillStyle = '#040507';
   bCtx.beginPath();
   bCtx.moveTo(-50, h * 0.6); 
@@ -129,34 +180,20 @@ function drawStaticBackground() {
   bCtx.quadraticCurveTo(w * 0.8, h * 0.55, w + 50, h * 0.6); 
   bCtx.lineTo(-50, h * 0.6);
   bCtx.fill();
-  
-  bCtx.strokeStyle = '#040507';
-  bCtx.lineWidth = 15;
-  bCtx.lineCap = "round";
-  bCtx.beginPath();
-  bCtx.moveTo(w * 0.64, h * 0.44);
-  bCtx.bezierCurveTo(w * 0.75, h * 0.35, w * 0.72, h * 0.22, w * 0.62, h * 0.25);
-  bCtx.bezierCurveTo(w * 0.54, h * 0.28, w * 0.56, h * 0.38, w * 0.61, h * 0.36);
-  bCtx.stroke();
 
-  // Árboles
   bCtx.strokeStyle = '#020304';
   bCtx.lineCap = 'round'; bCtx.lineJoin = 'round';
-  bCtx.lineWidth = 20;
+  bCtx.lineWidth = 15;
   bCtx.beginPath(); bCtx.moveTo(w * 0.1, h * 0.6); bCtx.quadraticCurveTo(w * 0.15, h * 0.35, w * 0.05, h * 0.15); bCtx.stroke();
-  bCtx.lineWidth = 8;
-  bCtx.beginPath(); bCtx.moveTo(w * 0.13, h * 0.40); bCtx.quadraticCurveTo(w * 0.25, h * 0.30, w * 0.30, h * 0.35); bCtx.stroke();
 
-  // Pared y niebla
   let fogGrad = bCtx.createLinearGradient(0, h * 0.45, 0, h * 0.6);
   fogGrad.addColorStop(0, 'rgba(44, 27, 77, 0)');
   fogGrad.addColorStop(1, 'rgba(44, 27, 77, 0.6)');
   bCtx.fillStyle = fogGrad; bCtx.fillRect(0, h * 0.45, w, h * 0.15);
   bCtx.fillStyle = '#07080c'; bCtx.fillRect(0, h * 0.6, w, h * 0.4);
   
-  // Ladrillos simplificados para mejorar rendimiento
-  bCtx.strokeStyle = '#020203'; bCtx.lineWidth = 3;
-  let rowH = 35, colW = 75;
+  bCtx.strokeStyle = '#020203'; bCtx.lineWidth = 2;
+  let rowH = 40, colW = 80;
   for(let y = h * 0.6; y < h; y += rowH) { bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(w, y); bCtx.stroke(); }
   let offset = 0;
   for(let y = h * 0.6; y < h; y += rowH) {
@@ -165,74 +202,34 @@ function drawStaticBackground() {
   }
 }
 
-// Dibujamos elementos que se mueven (Jack de fondo y Murciélagos) en un loop aparte
 function drawDynamicBackground(time) {
   const w = bg.width, h = bg.height;
-  
-  // Solo borramos la parte del cielo donde están los murciélagos y Jack
-  // para no redibujar toda la pared y ahorrar recursos.
   bCtx.clearRect(0, 0, w, h * 0.6); 
   
-  // Volvemos a dibujar el cielo y la luna en esa sección superior
   let grad = bCtx.createLinearGradient(0, 0, 0, h * 0.8);
   grad.addColorStop(0, '#020205'); grad.addColorStop(0.5, '#150822'); grad.addColorStop(1, '#2c1b4d');
   bCtx.fillStyle = grad; bCtx.fillRect(0, 0, w, h * 0.6);
   
-  bCtx.save();
-  bCtx.shadowColor = 'rgba(210, 235, 255, 0.8)'; bCtx.shadowBlur = 40; 
-  bCtx.fillStyle = '#e1f2ff'; bCtx.beginPath(); bCtx.arc(w * 0.80, h * 0.25, 80, 0, Math.PI * 2); bCtx.fill();
-  bCtx.restore();
+  bCtx.fillStyle = '#e1f2ff'; 
+  bCtx.beginPath(); bCtx.arc(w * 0.80, h * 0.25, 70, 0, Math.PI * 2); bCtx.fill();
 
-  // Re-dibujar parte de la colina superior
   bCtx.fillStyle = '#040507';
   bCtx.beginPath();
   bCtx.moveTo(-50, h * 0.6); 
   bCtx.quadraticCurveTo(w * 0.4, h * 0.35, w * 0.65, h * 0.45); 
   bCtx.quadraticCurveTo(w * 0.8, h * 0.55, w + 50, h * 0.6); 
   bCtx.lineTo(-50, h * 0.6); bCtx.fill();
-  bCtx.strokeStyle = '#040507'; bCtx.lineWidth = 15; bCtx.lineCap = "round";
-  bCtx.beginPath(); bCtx.moveTo(w * 0.64, h * 0.44); bCtx.bezierCurveTo(w * 0.75, h * 0.35, w * 0.72, h * 0.22, w * 0.62, h * 0.25); bCtx.bezierCurveTo(w * 0.54, h * 0.28, w * 0.56, h * 0.38, w * 0.61, h * 0.36); bCtx.stroke();
 
-  // Re-dibujar árboles
-  bCtx.strokeStyle = '#020304'; bCtx.lineCap = 'round'; bCtx.lineJoin = 'round'; bCtx.lineWidth = 20;
+  bCtx.strokeStyle = '#020304'; bCtx.lineCap = 'round'; bCtx.lineWidth = 15;
   bCtx.beginPath(); bCtx.moveTo(w * 0.1, h * 0.6); bCtx.quadraticCurveTo(w * 0.15, h * 0.35, w * 0.05, h * 0.15); bCtx.stroke();
-  bCtx.lineWidth = 8; bCtx.beginPath(); bCtx.moveTo(w * 0.13, h * 0.40); bCtx.quadraticCurveTo(w * 0.25, h * 0.30, w * 0.30, h * 0.35); bCtx.stroke();
-
 
   let floatOffset = Math.sin(time * 0.035) * 6;
 
-  // JACK SKELLINGTON DE FONDO (Cuerpo Corregido)
-  bCtx.save();
-  let jx = w * 0.35, jy = h * 0.6 - 100 + floatOffset; 
-  
-  // CUERPO RECONECTADO
-  bCtx.fillStyle = '#08080d';
-  bCtx.beginPath(); 
-  bCtx.moveTo(jx, jy); // Empieza justo debajo de la cabeza
-  bCtx.lineTo(jx - 15, h * 0.6); 
-  bCtx.lineTo(jx + 15, h * 0.6); 
-  bCtx.closePath();
-  bCtx.fill();
-  
-  bCtx.strokeStyle = '#e2e8f0'; bCtx.lineWidth = 1.5;
-  for(let i = -12; i <= 12; i += 4) {
-    bCtx.beginPath(); bCtx.moveTo(jx + (i*0.2), jy + 5); bCtx.lineTo(jx + i, h * 0.6); bCtx.stroke();
-  }
-  
-  bCtx.fillStyle = '#020204';
-  bCtx.beginPath(); bCtx.moveTo(jx, jy + 15); bCtx.lineTo(jx - 35, jy); bCtx.lineTo(jx - 20, jy + 30); bCtx.lineTo(jx, jy + 20); bCtx.lineTo(jx + 20, jy + 30); bCtx.lineTo(jx + 35, jy); bCtx.fill();
-  bCtx.fillStyle = '#f0f4f8';
-  bCtx.beginPath(); bCtx.arc(jx, jy - 15, 22, 0, Math.PI * 2); bCtx.fill(); // Cabeza más alta
-  bCtx.fillStyle = '#020203';
-  bCtx.beginPath(); bCtx.ellipse(jx - 8, jy - 20, 6, 9, -0.2, 0, Math.PI * 2); bCtx.ellipse(jx + 8, jy - 20, 6, 9, 0.2, 0, Math.PI * 2); bCtx.fill();
-  bCtx.lineWidth = 1.5; bCtx.strokeStyle = '#020203';
-  bCtx.beginPath(); bCtx.arc(jx, jy - 5, 14, 0.1 * Math.PI, 0.9 * Math.PI); bCtx.stroke();
-  for(let i = -10; i <= 10; i += 3) {
-    bCtx.beginPath(); bCtx.moveTo(jx + i, jy - 8); bCtx.lineTo(jx + i, jy); bCtx.stroke();
-  }
-  bCtx.restore();
+  // Cruz en la colina en memoria de Samuel
+  bCtx.strokeStyle = '#1a1a24'; bCtx.lineWidth = 6;
+  bCtx.beginPath(); bCtx.moveTo(w * 0.4, h * 0.45); bCtx.lineTo(w * 0.4, h * 0.35); bCtx.stroke();
+  bCtx.beginPath(); bCtx.moveTo(w * 0.37, h * 0.4); bCtx.lineTo(w * 0.43, h * 0.4); bCtx.stroke();
 
-  // Murciélagos
   bats.forEach(b => {
     b.x -= b.speed;
     if(b.x < -50) b.x = w + 50;
@@ -249,73 +246,66 @@ function drawDynamicBackground(time) {
   });
 }
 
+// Trazos para formar SAMUEL
 const letterGroups = [
-  [ {x:0.18, y:0.65, ex:0.18, ey:0.92, width:45}, {x:0.18, y:0.77, ex:0.34, ey:0.65, width:35}, {x:0.22, y:0.74, ex:0.36, ey:0.92, width:35} ],
-  [ {x:0.42, y:0.65, ex:0.42, ey:0.92, width:45}, {x:0.42, y:0.65, ex:0.62, ey:0.67, width:32}, {x:0.42, y:0.78, ex:0.58, ey:0.80, width:30}, {x:0.42, y:0.92, ex:0.62, ey:0.90, width:32} ],
-  // Letra Y
-  [ {x:0.68, y:0.65, ex:0.77, ey:0.79, width:36}, {x:0.86, y:0.65, ex:0.77, ey:0.79, width:36}, {x:0.77, y:0.79, ex:0.77, ey:0.94, width:40} ]
+  [{x:0.13, y:0.65, ex:0.04, ey:0.65, width:24}, {x:0.04, y:0.65, ex:0.04, ey:0.77, width:24}, {x:0.04, y:0.77, ex:0.13, ey:0.77, width:24}, {x:0.13, y:0.77, ex:0.13, ey:0.90, width:24}, {x:0.13, y:0.90, ex:0.04, ey:0.90, width:24}],
+  [{x:0.23, y:0.65, ex:0.17, ey:0.90, width:24}, {x:0.23, y:0.65, ex:0.29, ey:0.90, width:24}, {x:0.19, y:0.80, ex:0.27, ey:0.80, width:20}],
+  [{x:0.33, y:0.90, ex:0.33, ey:0.65, width:24}, {x:0.33, y:0.65, ex:0.40, ey:0.82, width:22}, {x:0.40, y:0.82, ex:0.47, ey:0.65, width:22}, {x:0.47, y:0.65, ex:0.47, ey:0.90, width:24}],
+  [{x:0.51, y:0.65, ex:0.51, ey:0.90, width:24}, {x:0.51, y:0.90, ex:0.61, ey:0.90, width:24}, {x:0.61, y:0.90, ex:0.61, ey:0.65, width:24}],
+  [{x:0.65, y:0.65, ex:0.65, ey:0.90, width:24}, {x:0.65, y:0.65, ex:0.74, ey:0.65, width:22}, {x:0.65, y:0.77, ex:0.72, ey:0.77, width:20}, {x:0.65, y:0.90, ex:0.74, ey:0.90, width:22}],
+  [{x:0.78, y:0.65, ex:0.78, ey:0.90, width:24}, {x:0.78, y:0.90, ex:0.87, ey:0.90, width:22}]
 ];
 
 const allStrokes = [];
-letterGroups.forEach((group, gIndex) => {
-  group.forEach(stroke => { allStrokes.push({ ...stroke, groupIndex: gIndex }); });
-});
+letterGroups.forEach((group, gIndex) => { group.forEach(stroke => { allStrokes.push({ ...stroke, groupIndex: gIndex }); }); });
 
-// ESTACIONES CORREGIDAS PARA EL BRAZO DE LA Y
-const characterStations = [ 
-  {x: 0.05, y: 0.92}, // Para K
-  {x: 0.30, y: 0.92}, // Para E
-  {x: 0.65, y: 0.92}  // Para Y (Movido más a la derecha para que el brazo no se estire tanto)
-];
-
+const characterStations = [ {x: 0.08, y: 0.94}, {x: 0.23, y: 0.94}, {x: 0.40, y: 0.94}, {x: 0.56, y: 0.94}, {x: 0.70, y: 0.94}, {x: 0.83, y: 0.94} ];
 const colors = { fill: 'rgba(170, 40, 190, 0.95)', glow: 'rgba(0, 240, 255, 0.85)', outline: 'rgba(0, 0, 0, 0.98)' };
 
+// Optimización: Menos spray para que no se trabe
 function spray(x, y, color, radius, count) {
   pCtx.fillStyle = color; 
   for(let i = 0; i < count; i++) {
     let a = Math.random() * Math.PI * 2;
     let d = (Math.random() * Math.random()) * radius; 
-    pCtx.globalAlpha = 0.7 + Math.random() * 0.3;
-    let size = Math.random() * 3.5 + 1.5; // Partículas más grandes = menos necesarias = mejor rendimiento
+    pCtx.globalAlpha = 0.8;
+    let size = Math.random() * 2.5 + 1.5; 
     pCtx.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d, size, size);
   }
   pCtx.globalAlpha = 1;
 }
 
+// Michi Samuel
 function drawStationaryCharacter(charX, charY, sprayTargetX, sprayTargetY, isPainting) {
   fCtx.save();
   fCtx.fillStyle = 'rgba(0,0,0,0.8)';
-  fCtx.beginPath(); fCtx.ellipse(charX + 18, charY + 15, 22, 6, 0, 0, Math.PI * 2); fCtx.fill();
+  fCtx.beginPath(); fCtx.ellipse(charX + 12, charY + 5, 20, 5, 0, 0, Math.PI * 2); fCtx.fill();
+
+  fCtx.strokeStyle = '#0a0a0f'; fCtx.lineWidth = 4; fCtx.lineCap = 'round';
+  fCtx.beginPath(); fCtx.moveTo(charX - 2, charY - 5); fCtx.bezierCurveTo(charX - 15, charY - 10, charX - 20, charY - 30, charX - 10, charY - 35); fCtx.bezierCurveTo(charX - 5, charY - 38, charX - 2, charY - 30, charX - 8, charY - 28); fCtx.stroke();
   
-  fCtx.strokeStyle = '#000'; fCtx.lineWidth = 4; fCtx.lineCap = 'round';
-  fCtx.beginPath(); fCtx.moveTo(charX + 18, charY); fCtx.lineTo(charX + 10, charY + 15); fCtx.moveTo(charX + 18, charY); fCtx.lineTo(charX + 26, charY + 15); fCtx.stroke();
+  fCtx.strokeStyle = '#000'; fCtx.lineWidth = 3;
+  fCtx.beginPath(); fCtx.moveTo(charX + 6, charY - 10); fCtx.lineTo(charX + 6, charY + 5); fCtx.moveTo(charX + 18, charY - 10); fCtx.lineTo(charX + 18, charY + 5); fCtx.stroke();
   
   fCtx.fillStyle = '#0a0a0f';
-  fCtx.beginPath(); fCtx.moveTo(charX + 8, charY - 25); fCtx.lineTo(charX + 28, charY - 25); fCtx.lineTo(charX + 30, charY + 2); fCtx.lineTo(charX + 6, charY + 2); fCtx.closePath(); fCtx.fill(); fCtx.stroke();
+  fCtx.beginPath(); fCtx.ellipse(charX + 12, charY - 15, 12, 16, Math.PI/6, 0, Math.PI * 2); fCtx.fill(); fCtx.stroke();
+  fCtx.beginPath(); fCtx.arc(charX + 18, charY - 30, 12, 0, Math.PI * 2); fCtx.fill(); fCtx.stroke();
+  
+  fCtx.beginPath(); fCtx.moveTo(charX + 10, charY - 37); fCtx.lineTo(charX + 6, charY - 50); fCtx.lineTo(charX + 16, charY - 40); fCtx.moveTo(charX + 22, charY - 40); fCtx.lineTo(charX + 28, charY - 52); fCtx.lineTo(charX + 28, charY - 35); fCtx.fill(); fCtx.stroke();
   
   fCtx.fillStyle = '#fff';
-  fCtx.beginPath(); fCtx.arc(charX + 18, charY - 35, 16, 0, Math.PI * 2); fCtx.fill(); fCtx.stroke();
+  fCtx.beginPath(); fCtx.arc(charX + 14, charY - 32, 4.5, 0, Math.PI * 2); fCtx.arc(charX + 24, charY - 32, 4.5, 0, Math.PI * 2); fCtx.fill();
   fCtx.fillStyle = '#000';
-  fCtx.beginPath(); fCtx.arc(charX + 12, charY - 36, 5, 0, Math.PI * 2); fCtx.arc(charX + 24, charY - 36, 5, 0, Math.PI * 2); fCtx.fill();
+  fCtx.beginPath(); fCtx.arc(charX + 14, charY - 32, 1.5, 0, Math.PI * 2); fCtx.arc(charX + 24, charY - 32, 1.5, 0, Math.PI * 2); fCtx.fill();
 
   if (isPainting) {
-    fCtx.beginPath(); 
-    fCtx.moveTo(charX + 18, charY - 20); 
-    // CORRECCIÓN DEL BRAZO: limitamos qué tan lejos puede estirarse el brazo visualmente
-    let bX = sprayTargetX;
-    let bY = sprayTargetY;
-    fCtx.lineTo(bX, bY); 
-    fCtx.stroke();
-    
+    fCtx.strokeStyle = '#000'; fCtx.lineWidth = 3;
+    fCtx.beginPath(); fCtx.moveTo(charX + 18, charY - 15); let bX = sprayTargetX; let bY = sprayTargetY; fCtx.lineTo(bX, bY); fCtx.stroke();
     fCtx.fillStyle = '#7b1fa2'; fCtx.fillRect(bX - 8, bY - 12, 16, 24);
     fCtx.fillStyle = '#00e5ff'; fCtx.fillRect(bX - 4, bY - 16, 8, 4);
     
     fCtx.fillStyle = 'rgba(0, 229, 255, 0.8)';
-    for(let i=0; i<4; i++){
-      let a = Math.random() * Math.PI * 2;
-      let d = Math.random() * 12;
-      fCtx.fillRect(bX + Math.cos(a)*d, bY - 20 + Math.sin(a)*d, 3, 3);
-    }
+    for(let i=0; i<3; i++){ let a = Math.random() * Math.PI * 2; let d = Math.random() * 10; fCtx.fillRect(bX + Math.cos(a)*d, bY - 20 + Math.sin(a)*d, 3, 3); }
   }
   fCtx.restore();
 }
@@ -324,9 +314,12 @@ let anim = null;
 let currentStrokeIdx = 0;
 let currentT = 0;
 let timeFrame = 0;
+let letterTimeout = null;
 
 function start() {
   cancelAnimationFrame(anim);
+  clearTimeout(letterTimeout);
+  letterOverlay.classList.remove('show');
   currentStrokeIdx = 0;
   currentT = 0;
   timeFrame = 0;
@@ -335,59 +328,59 @@ function start() {
   
   (function loop() {
     timeFrame++;
-    drawDynamicBackground(timeFrame);
+    if(timeFrame % 2 === 0) drawDynamicBackground(timeFrame); // Optimización visual
     fCtx.clearRect(0, 0, fg.width, fg.height);
     
     if (currentStrokeIdx < allStrokes.length) {
       let st = allStrokes[currentStrokeIdx];
-      // OPTIMIZACIÓN: Menos pasos por frame (de 4 a 2), pero pasos más grandes. 
-      // El procesador hace la mitad de esfuerzo y se sigue viendo igual.
-      let stepsPerFrame = 2; 
-      let stepSize = 0.025; 
+      let stepSize = 0.035; // Avanza más rápido, dibuja menos frames
       let targetX = 0, targetY = 0;
       
-      for(let i=0; i<stepsPerFrame; i++) {
-        if (currentT > 1) break;
-        
-        let x = (st.x + (st.ex - st.x) * currentT) * paint.width;
-        let y = (st.y + (st.ey - st.y) * currentT) * paint.height;
-        targetX = x; targetY = y;
-        let r = st.width * (0.8 + Math.sin(currentT * Math.PI) * 0.25);
-        
-        spray(x, y, colors.outline, r * 1.3, 8);
-        spray(x, y, colors.glow, r * 0.7, 6);
-        spray(x, y, colors.fill, r, 12);
-        
-        if (Math.random() > 0.85) {
-          let dripLen = 20 + Math.random() * 30;
-          for (let d = 0; d < dripLen; d += 3) { // Menos gotas, más separadas
-            pCtx.fillStyle = colors.fill;
-            pCtx.globalAlpha = 1 - (d / dripLen);
-            pCtx.fillRect(x + (Math.random() - 0.5) * 4, y + d, 3, 4);
-          }
-          pCtx.globalAlpha = 1;
+      let x = (st.x + (st.ex - st.x) * currentT) * paint.width;
+      let y = (st.y + (st.ey - st.y) * currentT) * paint.height;
+      targetX = x; targetY = y;
+      let r = st.width * (0.8 + Math.sin(currentT * Math.PI) * 0.25);
+      
+      // Menos partículas = Mayor rendimiento
+      spray(x, y, colors.outline, r * 1.3, 4);
+      spray(x, y, colors.glow, r * 0.7, 3);
+      spray(x, y, colors.fill, r, 6);
+      
+      if (Math.random() > 0.92) { 
+        let dripLen = 15 + Math.random() * 20;
+        for (let d = 0; d < dripLen; d += 4) { 
+          pCtx.fillStyle = colors.fill; pCtx.globalAlpha = 1 - (d / dripLen);
+          pCtx.fillRect(x + (Math.random() - 0.5) * 4, y + d, 3, 4);
         }
-        currentT += stepSize;
+        pCtx.globalAlpha = 1;
       }
+      currentT += stepSize;
       
       let station = characterStations[st.groupIndex];
       drawStationaryCharacter(station.x * fg.width, station.y * fg.height, targetX, targetY, true);
       
-      if (currentT > 1) {
-        currentT = 0;
-        currentStrokeIdx++;
-      }
+      if (currentT > 1) { currentT = 0; currentStrokeIdx++; }
+      anim = requestAnimationFrame(loop);
     } else {
-      let station = characterStations[2];
+      let station = characterStations[5];
       drawStationaryCharacter(station.x * fg.width, station.y * fg.height, station.x * fg.width + 20, station.y * fg.height - 20, false);
+      
+      // Mostrar la carta de despedida 2 segundos después de terminar
+      letterTimeout = setTimeout(() => {
+        letterOverlay.classList.add('show');
+      }, 2000);
     }
-    
-    anim = requestAnimationFrame(loop);
   })();
+}
+
+function closeLetter() {
+  letterOverlay.classList.remove('show');
 }
 
 function clearCanv() {
   cancelAnimationFrame(anim);
+  clearTimeout(letterTimeout);
+  letterOverlay.classList.remove('show');
   pCtx.clearRect(0, 0, paint.width, paint.height);
   fCtx.clearRect(0, 0, fg.width, fg.height);
   drawStaticBackground();
