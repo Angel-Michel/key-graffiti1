@@ -26,6 +26,7 @@
     text-shadow: 0 0 15px rgba(123,31,162,0.8);
     font-weight: normal;
     text-align: center;
+    z-index: 10;
   }
   #wall {
     position: relative;
@@ -68,7 +69,7 @@
     box-shadow: 0 0 15px rgba(123,31,162,0.8);
   }
 
-  /* ESTILOS DE LA CARTA */
+  /* CARTA DE DESPEDIDA */
   #letter-overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -154,7 +155,10 @@ const fg = document.getElementById('fg'), fCtx = fg.getContext('2d');
 const letterOverlay = document.getElementById('letter-overlay');
 
 function resize() {
-  [bg, paint, fg].forEach(c => { c.width = c.offsetWidth * 2; c.height = c.offsetHeight * 2; });
+  [bg, paint, fg].forEach(c => { 
+    c.width = c.parentElement.clientWidth * 2; 
+    c.height = c.parentElement.clientHeight * 2; 
+  });
   drawStaticBackground();
 }
 
@@ -163,43 +167,42 @@ let bats = [
   {x: 300, y: 80, speed: 1.5, size: 8, wing: 1}
 ]; 
 
+// FONDO ESTÁTICO (Solo se dibuja 1 vez)
 function drawStaticBackground() {
   const w = bg.width, h = bg.height;
   bCtx.clearRect(0, 0, w, h);
   
+  // Cielo
   let grad = bCtx.createLinearGradient(0, 0, 0, h * 0.8);
-  grad.addColorStop(0, '#020205');
-  grad.addColorStop(0.5, '#150822');
-  grad.addColorStop(1, '#2c1b4d');
-  bCtx.fillStyle = grad;
-  bCtx.fillRect(0, 0, w, h);
+  grad.addColorStop(0, '#020205'); grad.addColorStop(0.5, '#150822'); grad.addColorStop(1, '#2c1b4d');
+  bCtx.fillStyle = grad; bCtx.fillRect(0, 0, w, h);
 
+  // Luna
   bCtx.save();
-  bCtx.shadowColor = 'rgba(210, 235, 255, 0.5)';
-  bCtx.shadowBlur = 20; 
+  bCtx.shadowColor = 'rgba(210, 235, 255, 0.6)'; bCtx.shadowBlur = 30; 
   bCtx.fillStyle = '#e1f2ff';
-  bCtx.beginPath(); bCtx.arc(w * 0.82, h * 0.25, 70, 0, Math.PI * 2); bCtx.fill();
+  bCtx.beginPath(); bCtx.arc(w * 0.80, h * 0.28, 70, 0, Math.PI * 2); bCtx.fill();
   bCtx.restore();
 
+  // Colina
   bCtx.fillStyle = '#040507';
   bCtx.beginPath();
   bCtx.moveTo(-50, h * 0.6); 
   bCtx.quadraticCurveTo(w * 0.4, h * 0.35, w * 0.65, h * 0.45); 
   bCtx.quadraticCurveTo(w * 0.8, h * 0.55, w + 50, h * 0.6); 
-  bCtx.lineTo(-50, h * 0.6);
-  bCtx.fill();
+  bCtx.lineTo(-50, h * 0.6); bCtx.fill();
 
-  bCtx.strokeStyle = '#020304';
-  bCtx.lineCap = 'round'; bCtx.lineJoin = 'round';
-  bCtx.lineWidth = 15;
+  // Árbol izquierdo
+  bCtx.strokeStyle = '#020304'; bCtx.lineCap = 'round'; bCtx.lineWidth = 15;
   bCtx.beginPath(); bCtx.moveTo(w * 0.1, h * 0.6); bCtx.quadraticCurveTo(w * 0.15, h * 0.35, w * 0.05, h * 0.15); bCtx.stroke();
 
-  let fogGrad = bCtx.createLinearGradient(0, h * 0.45, 0, h * 0.6);
-  fogGrad.addColorStop(0, 'rgba(44, 27, 77, 0)');
-  fogGrad.addColorStop(1, 'rgba(44, 27, 77, 0.6)');
-  bCtx.fillStyle = fogGrad; bCtx.fillRect(0, h * 0.45, w, h * 0.15);
+  // Cruz estilo Burton
+  bCtx.strokeStyle = '#1a1a24'; bCtx.lineWidth = 6;
+  bCtx.beginPath(); bCtx.moveTo(w * 0.4, h * 0.45); bCtx.lineTo(w * 0.4, h * 0.35); bCtx.stroke();
+  bCtx.beginPath(); bCtx.moveTo(w * 0.37, h * 0.4); bCtx.lineTo(w * 0.43, h * 0.4); bCtx.stroke();
+
+  // Pared oscura
   bCtx.fillStyle = '#07080c'; bCtx.fillRect(0, h * 0.6, w, h * 0.4);
-  
   bCtx.strokeStyle = '#030305'; bCtx.lineWidth = 2;
   let rowH = 40, colW = 80;
   for(let y = h * 0.6; y < h; y += rowH) { bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(w, y); bCtx.stroke(); }
@@ -210,183 +213,147 @@ function drawStaticBackground() {
   }
 }
 
-function drawDynamicBackground(time) {
-  const w = bg.width, h = bg.height;
-  bCtx.clearRect(0, 0, w, h * 0.6); 
+// 1. SAMUEL GIGANTE Y ANIMADO
+function drawSamuelAnimated(ctx, x, y, time) {
+  ctx.save();
+  ctx.translate(x, y);
   
-  let grad = bCtx.createLinearGradient(0, 0, 0, h * 0.8);
-  grad.addColorStop(0, '#020205'); grad.addColorStop(0.5, '#150822'); grad.addColorStop(1, '#2c1b4d');
-  bCtx.fillStyle = grad; bCtx.fillRect(0, 0, w, h * 0.6);
+  // Escala gigante base (8x)
+  let baseScale = 8;
   
-  bCtx.fillStyle = '#e1f2ff'; 
-  bCtx.beginPath(); bCtx.arc(w * 0.82, h * 0.25, 70, 0, Math.PI * 2); bCtx.fill();
+  // Animación de respiración (el cuerpo sube y baja muy suavemente)
+  let breathY = Math.sin(time * 0.05) * 0.03; 
+  ctx.scale(baseScale, baseScale + breathY);
+  
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.beginPath(); ctx.ellipse(0, 5, 20, 5, 0, 0, Math.PI*2); ctx.fill();
+  
+  // Animación de la cola (se mueve suavemente de lado a lado)
+  let tailAngle = Math.sin(time * 0.04) * 0.3;
+  ctx.save();
+  ctx.translate(-12, -5); // Base de la cola
+  ctx.rotate(tailAngle);
+  ctx.lineWidth = 3; ctx.strokeStyle = '#2b3e50'; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-15, 10, -10, -20); ctx.stroke();
+  ctx.restore();
+  
+  // Cuerpo (Gris Azulado Oscuro)
+  ctx.fillStyle = '#3a4e63'; 
+  ctx.beginPath(); ctx.moveTo(-15, 0); ctx.quadraticCurveTo(-18, -35, -2, -40); ctx.quadraticCurveTo(15, -35, 15, 0); ctx.fill();
 
-  bCtx.fillStyle = '#040507';
-  bCtx.beginPath();
-  bCtx.moveTo(-50, h * 0.6); 
-  bCtx.quadraticCurveTo(w * 0.4, h * 0.35, w * 0.65, h * 0.45); 
-  bCtx.quadraticCurveTo(w * 0.8, h * 0.55, w + 50, h * 0.6); 
-  bCtx.lineTo(-50, h * 0.6); bCtx.fill();
+  // Pecho (Gris Azulado Claro)
+  ctx.fillStyle = '#6b8299';
+  ctx.beginPath(); ctx.moveTo(-6, 0); ctx.quadraticCurveTo(-8, -25, 0, -35); ctx.quadraticCurveTo(8, -25, 8, 0); ctx.fill();
+  
+  // Cabeza (Gris Azulado)
+  ctx.fillStyle = '#3a4e63'; 
+  ctx.beginPath(); ctx.arc(4, -45, 14, 0, Math.PI * 2); ctx.fill();
+  
+  // Orejas con animación sutil (se mueven un poquito)
+  let earTwitch = Math.sin(time * 0.1) * 0.02;
+  ctx.save();
+  ctx.translate(4, -45); ctx.rotate(earTwitch);
+  ctx.fillStyle = '#3a4e63'; 
+  ctx.beginPath(); ctx.moveTo(-9, -9); ctx.lineTo(-8, -23); ctx.lineTo(-1, -12); ctx.fill(); // Izquierda
+  ctx.beginPath(); ctx.moveTo(2, -12); ctx.lineTo(9, -23); ctx.lineTo(10, -8); ctx.fill(); // Derecha
+  ctx.fillStyle = '#6b8299'; // Interior oreja
+  ctx.beginPath(); ctx.moveTo(-7, -10); ctx.lineTo(-7, -17); ctx.lineTo(-3, -11); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(4, -11); ctx.lineTo(7, -17); ctx.lineTo(8, -10); ctx.fill();
+  ctx.restore();
+  
+  // Collar brillante
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.9)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-5, -32); ctx.quadraticCurveTo(4, -28, 12, -33); ctx.stroke();
+  ctx.fillStyle = 'gold'; ctx.beginPath(); ctx.arc(4, -29, 2.5, 0, Math.PI*2); ctx.fill();
 
-  bCtx.strokeStyle = '#020304'; bCtx.lineCap = 'round'; bCtx.lineWidth = 15;
-  bCtx.beginPath(); bCtx.moveTo(w * 0.1, h * 0.6); bCtx.quadraticCurveTo(w * 0.15, h * 0.35, w * 0.05, h * 0.15); bCtx.stroke();
-
-  // Cruz en la colina estilo Tim Burton (chueca y gótica)
-  bCtx.strokeStyle = '#1a1a24'; bCtx.lineWidth = 5; bCtx.lineCap = 'round';
-  bCtx.beginPath(); bCtx.moveTo(w * 0.4, h * 0.46); bCtx.lineTo(w * 0.38, h * 0.35); bCtx.stroke();
-  bCtx.beginPath(); bCtx.moveTo(w * 0.35, h * 0.39); bCtx.lineTo(w * 0.43, h * 0.41); bCtx.stroke();
-
-  bats.forEach(b => {
-    b.x -= b.speed;
-    if(b.x < -50) b.x = w + 50;
-    b.wing += 0.22;
-    let wo = Math.sin(b.wing) * b.size;
-    bCtx.fillStyle = '#000';
-    bCtx.beginPath();
-    bCtx.moveTo(b.x, b.y);
-    bCtx.quadraticCurveTo(b.x - b.size, b.y - b.size - wo, b.x - b.size * 2, b.y - wo * 0.5);
-    bCtx.quadraticCurveTo(b.x - b.size, b.y + 2, b.x, b.y + 4);
-    bCtx.quadraticCurveTo(b.x + b.size, b.y + 2, b.x + b.size * 2, b.y - wo * 0.5);
-    bCtx.quadraticCurveTo(b.x + b.size, b.y - b.size - wo, b.x, b.y);
-    bCtx.fill();
-  });
+  // Animación de parpadeo (Cierra los ojos muy rápido de vez en cuando)
+  let blink = (time % 150 < 5) ? 0.1 : 1; 
+  ctx.save();
+  ctx.translate(10, -47);
+  ctx.scale(1, blink);
+  // Ojo grande mirando a la luna
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(1, -0.5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  
+  ctx.restore();
 }
 
-// Trazos para formar SAMUEL
+// 2. GATITO AYUDANTE ABAJO
+function drawHelper(ctx, charX, charY, targetX, targetY, isPainting) {
+  ctx.save();
+  // Escala para el gatito pequeño
+  let scale = 1.5;
+  ctx.translate(charX, charY);
+  ctx.scale(scale, scale);
+  
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.9)';
+  ctx.beginPath(); ctx.ellipse(0, 3, 15, 4, 0, 0, Math.PI * 2); ctx.fill();
+
+  // Cola
+  ctx.strokeStyle = '#1e1e28'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-10, -3); ctx.quadraticCurveTo(-20, -5, -15, -15); ctx.stroke();
+  
+  // Cuerpo Oscuro
+  ctx.fillStyle = '#1e1e28';
+  ctx.beginPath(); ctx.ellipse(0, -10, 10, 12, Math.PI/8, 0, Math.PI * 2); ctx.fill(); 
+  
+  // Cabeza
+  ctx.beginPath(); ctx.arc(6, -20, 9, 0, Math.PI * 2); ctx.fill(); 
+  
+  // Orejas
+  ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(-2, -35); ctx.lineTo(5, -28); ctx.moveTo(8, -28); ctx.lineTo(13, -35); ctx.lineTo(14, -24); ctx.fill(); 
+  
+  // Ojos blancos enormes
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(3, -22, 3, 0, Math.PI * 2); ctx.arc(10, -22, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(3, -22, 1, 0, Math.PI * 2); ctx.arc(10, -22, 1, 0, Math.PI * 2); ctx.fill();
+
+  if (isPainting) {
+    ctx.strokeStyle = '#0a0a14'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(6, -10); 
+    let relX = (targetX - charX) / scale; 
+    let relY = (targetY - charY) / scale; 
+    ctx.lineTo(relX, relY); ctx.stroke();
+    
+    // Bote
+    ctx.fillStyle = '#7b1fa2'; ctx.fillRect(relX - 6, relY - 8, 12, 18);
+    ctx.fillStyle = '#00e5ff'; ctx.fillRect(relX - 3, relY - 11, 6, 3);
+    
+    // Spray
+    ctx.fillStyle = 'rgba(0, 229, 255, 0.8)';
+    for(let i=0; i<3; i++){ let a = Math.random() * Math.PI * 2; let d = Math.random() * 8; ctx.fillRect(relX + Math.cos(a)*d, relY - 15 + Math.sin(a)*d, 2.5, 2.5); }
+  }
+  ctx.restore();
+}
+
+// Coordenadas de las letras ajustadas para que el gatito nunca quede fuera
 const letterGroups = [
-  [{x:0.13, y:0.65, ex:0.04, ey:0.65, width:24}, {x:0.04, y:0.65, ex:0.04, ey:0.77, width:24}, {x:0.04, y:0.77, ex:0.13, ey:0.77, width:24}, {x:0.13, y:0.77, ex:0.13, ey:0.90, width:24}, {x:0.13, y:0.90, ex:0.04, ey:0.90, width:24}],
-  [{x:0.23, y:0.65, ex:0.17, ey:0.90, width:24}, {x:0.23, y:0.65, ex:0.29, ey:0.90, width:24}, {x:0.19, y:0.80, ex:0.27, ey:0.80, width:20}],
-  [{x:0.33, y:0.90, ex:0.33, ey:0.65, width:24}, {x:0.33, y:0.65, ex:0.40, ey:0.82, width:22}, {x:0.40, y:0.82, ex:0.47, ey:0.65, width:22}, {x:0.47, y:0.65, ex:0.47, ey:0.90, width:24}],
-  [{x:0.51, y:0.65, ex:0.51, ey:0.90, width:24}, {x:0.51, y:0.90, ex:0.61, ey:0.90, width:24}, {x:0.61, y:0.90, ex:0.61, ey:0.65, width:24}],
-  [{x:0.65, y:0.65, ex:0.65, ey:0.90, width:24}, {x:0.65, y:0.65, ex:0.74, ey:0.65, width:22}, {x:0.65, y:0.77, ex:0.72, ey:0.77, width:20}, {x:0.65, y:0.90, ex:0.74, ey:0.90, width:22}],
-  [{x:0.78, y:0.65, ex:0.78, ey:0.90, width:24}, {x:0.78, y:0.90, ex:0.87, ey:0.90, width:22}]
+  [{x:0.13, y:0.65, ex:0.04, ey:0.65, width:24}, {x:0.04, y:0.65, ex:0.04, ey:0.75, width:24}, {x:0.04, y:0.75, ex:0.13, ey:0.75, width:24}, {x:0.13, y:0.75, ex:0.13, ey:0.85, width:24}, {x:0.13, y:0.85, ex:0.04, ey:0.85, width:24}],
+  [{x:0.23, y:0.65, ex:0.17, ey:0.85, width:24}, {x:0.23, y:0.65, ex:0.29, ey:0.85, width:24}, {x:0.19, y:0.75, ex:0.27, ey:0.75, width:20}],
+  [{x:0.33, y:0.85, ex:0.33, ey:0.65, width:24}, {x:0.33, y:0.65, ex:0.40, ey:0.75, width:22}, {x:0.40, y:0.75, ex:0.47, ey:0.65, width:22}, {x:0.47, y:0.65, ex:0.47, ey:0.85, width:24}],
+  [{x:0.51, y:0.65, ex:0.51, ey:0.85, width:24}, {x:0.51, y:0.85, ex:0.61, ey:0.85, width:24}, {x:0.61, y:0.85, ex:0.61, ey:0.65, width:24}],
+  [{x:0.65, y:0.65, ex:0.65, ey:0.85, width:24}, {x:0.65, y:0.65, ex:0.74, ey:0.65, width:22}, {x:0.65, y:0.75, ex:0.72, ey:0.75, width:20}, {x:0.65, y:0.85, ex:0.74, ey:0.85, width:22}],
+  [{x:0.78, y:0.65, ex:0.78, ey:0.85, width:24}, {x:0.78, y:0.85, ex:0.87, ey:0.85, width:22}]
 ];
 
 const allStrokes = [];
 letterGroups.forEach((group, gIndex) => { group.forEach(stroke => { allStrokes.push({ ...stroke, groupIndex: gIndex }); }); });
 
-// ESTACIONES DEL GATITO AYUDANTE (Abajo pintando en la pared)
-const characterStations = [ 
-  {x: 0.08, y: 0.94}, {x: 0.23, y: 0.94}, {x: 0.40, y: 0.94}, 
-  {x: 0.56, y: 0.94}, {x: 0.70, y: 0.94}, {x: 0.83, y: 0.94} 
-];
-const colors = { fill: 'rgba(170, 40, 190, 0.95)', glow: 'rgba(0, 240, 255, 0.85)', outline: 'rgba(0, 0, 0, 0.98)' };
+// Posiciones del gatito pequeño (Subidas a 0.88 para que se vean bien en cualquier teléfono)
+const characterStations = [ {x: 0.08, y: 0.88}, {x: 0.23, y: 0.88}, {x: 0.40, y: 0.88}, {x: 0.56, y: 0.88}, {x: 0.70, y: 0.88}, {x: 0.83, y: 0.88} ];
 
 function spray(x, y, color, radius, count) {
   pCtx.fillStyle = color; 
   for(let i = 0; i < count; i++) {
-    let a = Math.random() * Math.PI * 2;
-    let d = (Math.random() * Math.random()) * radius; 
+    let a = Math.random() * Math.PI * 2; let d = (Math.random() * Math.random()) * radius; 
     pCtx.globalAlpha = 0.8;
-    let size = Math.random() * 2.5 + 1.5; 
-    pCtx.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d, size, size);
+    pCtx.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d, 2, 2);
   }
   pCtx.globalAlpha = 1;
-}
-
-// 1. SAMUEL: GIGANTE, AZUL/GRIS, SENTADO EN LA BARDA
-function drawSamuel(ctx, x, y, scale) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, scale);
-  
-  // Sombra sobre la barda
-  ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.beginPath(); ctx.ellipse(0, 5, 20, 5, 0, 0, Math.PI*2); ctx.fill();
-  
-  // Cola larga y majestuosa
-  ctx.lineWidth = 4; ctx.strokeStyle = '#2b3e50'; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-10, -5); ctx.quadraticCurveTo(-30, 10, -25, -25); ctx.stroke();
-  
-  // Cuerpo (Gris Azulado Oscuro)
-  ctx.fillStyle = '#3a4e63'; 
-  ctx.beginPath();
-  ctx.moveTo(-15, 0); 
-  ctx.quadraticCurveTo(-18, -35, -2, -40); 
-  ctx.quadraticCurveTo(15, -35, 15, 0); 
-  ctx.fill();
-
-  // Pecho (Gris Azulado Claro)
-  ctx.fillStyle = '#6b8299';
-  ctx.beginPath();
-  ctx.moveTo(-6, 0);
-  ctx.quadraticCurveTo(-8, -25, 0, -35);
-  ctx.quadraticCurveTo(8, -25, 8, 0);
-  ctx.fill();
-  
-  // Cabeza (Gris Azulado Oscuro)
-  ctx.fillStyle = '#3a4e63'; 
-  ctx.beginPath(); ctx.arc(4, -45, 14, 0, Math.PI * 2); ctx.fill();
-  
-  // Orejas
-  ctx.beginPath(); ctx.moveTo(-5, -54); ctx.lineTo(-4, -68); ctx.lineTo(3, -57); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(6, -57); ctx.lineTo(13, -68); ctx.lineTo(14, -53); ctx.fill();
-
-  // Interior de Orejas (Gris Claro)
-  ctx.fillStyle = '#6b8299';
-  ctx.beginPath(); ctx.moveTo(-3, -55); ctx.lineTo(-3, -62); ctx.lineTo(1, -56); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(8, -56); ctx.lineTo(11, -62); ctx.lineTo(12, -55); ctx.fill();
-  
-  // Collar brillante
-  ctx.strokeStyle = 'rgba(255, 215, 0, 0.9)'; 
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(-5, -32); ctx.quadraticCurveTo(4, -28, 12, -33); ctx.stroke();
-  ctx.fillStyle = 'gold';
-  ctx.beginPath(); ctx.arc(4, -29, 2.5, 0, Math.PI*2); ctx.fill();
-
-  // Ojo grande mirando a la luna
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(10, -47, 4, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#000';
-  ctx.beginPath(); ctx.arc(11, -47.5, 2, 0, Math.PI*2); ctx.fill();
-  
-  ctx.restore();
-}
-
-// 2. GATITO AYUDANTE (PEQUEÑO, ABAJO PINTANDO, UN POCO MÁS CLARO PARA QUE SE VEA)
-function drawStationaryCharacter(charX, charY, sprayTargetX, sprayTargetY, isPainting) {
-  fCtx.save();
-  // Sombra
-  fCtx.fillStyle = 'rgba(0,0,0,0.9)';
-  fCtx.beginPath(); fCtx.ellipse(charX + 12, charY + 5, 20, 5, 0, 0, Math.PI * 2); fCtx.fill();
-
-  // Cola
-  fCtx.strokeStyle = '#1e1e28'; fCtx.lineWidth = 4; fCtx.lineCap = 'round';
-  fCtx.beginPath(); fCtx.moveTo(charX - 2, charY - 5); fCtx.bezierCurveTo(charX - 15, charY - 10, charX - 20, charY - 30, charX - 10, charY - 35); fCtx.bezierCurveTo(charX - 5, charY - 38, charX - 2, charY - 30, charX - 8, charY - 28); fCtx.stroke();
-  
-  // Patitas
-  fCtx.strokeStyle = '#0a0a14'; fCtx.lineWidth = 3;
-  fCtx.beginPath(); fCtx.moveTo(charX + 6, charY - 10); fCtx.lineTo(charX + 6, charY + 5); fCtx.moveTo(charX + 18, charY - 10); fCtx.lineTo(charX + 18, charY + 5); fCtx.stroke();
-  
-  // Cuerpo (Gris muy oscuro, casi negro, para que resalte en la pared)
-  fCtx.fillStyle = '#1e1e28';
-  fCtx.beginPath(); fCtx.ellipse(charX + 12, charY - 15, 12, 16, Math.PI/6, 0, Math.PI * 2); fCtx.fill(); 
-  
-  // Cabeza
-  fCtx.beginPath(); fCtx.arc(charX + 18, charY - 30, 12, 0, Math.PI * 2); fCtx.fill(); 
-  
-  // Orejas
-  fCtx.beginPath(); fCtx.moveTo(charX + 10, charY - 37); fCtx.lineTo(charX + 6, charY - 50); fCtx.lineTo(charX + 16, charY - 40); fCtx.moveTo(charX + 22, charY - 40); fCtx.lineTo(charX + 28, charY - 52); fCtx.lineTo(charX + 28, charY - 35); fCtx.fill(); 
-  
-  // Ojos blancos enormes
-  fCtx.fillStyle = '#fff';
-  fCtx.beginPath(); fCtx.arc(charX + 14, charY - 32, 4.5, 0, Math.PI * 2); fCtx.arc(charX + 24, charY - 32, 4.5, 0, Math.PI * 2); fCtx.fill();
-  fCtx.fillStyle = '#000';
-  fCtx.beginPath(); fCtx.arc(charX + 14, charY - 32, 1.5, 0, Math.PI * 2); fCtx.arc(charX + 24, charY - 32, 1.5, 0, Math.PI * 2); fCtx.fill();
-
-  if (isPainting) {
-    fCtx.strokeStyle = '#0a0a14'; fCtx.lineWidth = 3;
-    fCtx.beginPath(); fCtx.moveTo(charX + 18, charY - 15); let bX = sprayTargetX; let bY = sprayTargetY; fCtx.lineTo(bX, bY); fCtx.stroke();
-    
-    // Bote
-    fCtx.fillStyle = '#7b1fa2'; fCtx.fillRect(bX - 8, bY - 12, 16, 24);
-    fCtx.fillStyle = '#00e5ff'; fCtx.fillRect(bX - 4, bY - 16, 8, 4);
-    
-    // Spray
-    fCtx.fillStyle = 'rgba(0, 229, 255, 0.8)';
-    for(let i=0; i<3; i++){ let a = Math.random() * Math.PI * 2; let d = Math.random() * 10; fCtx.fillRect(bX + Math.cos(a)*d, bY - 20 + Math.sin(a)*d, 3, 3); }
-  }
-  fCtx.restore();
 }
 
 let anim = null;
@@ -399,24 +366,29 @@ function start() {
   cancelAnimationFrame(anim);
   clearTimeout(letterTimeout);
   letterOverlay.classList.remove('show');
-  currentStrokeIdx = 0;
-  currentT = 0;
-  timeFrame = 0;
+  currentStrokeIdx = 0; currentT = 0; timeFrame = 0;
   pCtx.clearRect(0, 0, paint.width, paint.height);
   drawStaticBackground();
   
   (function loop() {
     timeFrame++;
-    if(timeFrame % 2 === 0) drawDynamicBackground(timeFrame);
     fCtx.clearRect(0, 0, fg.width, fg.height);
     
-    // 1. DIBUJAR A SAMUEL EN LA BARDA (Ahora con escala de 5.5, es GIGANTE)
-    // Se posiciona del lado derecho (0.72) justo arriba del muro (0.6)
-    drawSamuel(fCtx, fg.width * 0.72, fg.height * 0.6, 5.5);
+    // Dibujar murciélagos animados
+    bats.forEach(b => {
+      b.x -= b.speed; if(b.x < -50) b.x = bg.width + 50;
+      b.wing += 0.22; let wo = Math.sin(b.wing) * b.size;
+      fCtx.fillStyle = '#000'; fCtx.beginPath();
+      fCtx.moveTo(b.x, b.y); fCtx.quadraticCurveTo(b.x - b.size, b.y - b.size - wo, b.x - b.size * 2, b.y - wo * 0.5);
+      fCtx.quadraticCurveTo(b.x - b.size, b.y + 2, b.x, b.y + 4); fCtx.quadraticCurveTo(b.x + b.size, b.y + 2, b.x + b.size * 2, b.y - wo * 0.5);
+      fCtx.quadraticCurveTo(b.x + b.size, b.y - b.size - wo, b.x, b.y); fCtx.fill();
+    });
+
+    // SAMUEL GIGANTE Y ANIMADO EN LA BARDA
+    drawSamuelAnimated(fCtx, fg.width * 0.72, fg.height * 0.6, timeFrame);
 
     if (currentStrokeIdx < allStrokes.length) {
       let st = allStrokes[currentStrokeIdx];
-      let stepSize = 0.035; 
       let targetX = 0, targetY = 0;
       
       let x = (st.x + (st.ex - st.x) * currentT) * paint.width;
@@ -424,45 +396,42 @@ function start() {
       targetX = x; targetY = y;
       let r = st.width * (0.8 + Math.sin(currentT * Math.PI) * 0.25);
       
-      spray(x, y, colors.outline, r * 1.3, 4);
-      spray(x, y, colors.glow, r * 0.7, 3);
-      spray(x, y, colors.fill, r, 6);
+      spray(x, y, 'rgba(0, 0, 0, 0.98)', r * 1.3, 4);
+      spray(x, y, 'rgba(0, 240, 255, 0.85)', r * 0.7, 3);
+      spray(x, y, 'rgba(170, 40, 190, 0.95)', r, 6);
       
-      if (Math.random() > 0.92) { 
-        let dripLen = 15 + Math.random() * 20;
+      if (Math.random() > 0.9) { 
+        let dripLen = 10 + Math.random() * 20;
         for (let d = 0; d < dripLen; d += 4) { 
-          pCtx.fillStyle = colors.fill; pCtx.globalAlpha = 1 - (d / dripLen);
+          pCtx.fillStyle = 'rgba(170, 40, 190, 0.95)'; pCtx.globalAlpha = 1 - (d / dripLen);
           pCtx.fillRect(x + (Math.random() - 0.5) * 4, y + d, 3, 4);
         }
         pCtx.globalAlpha = 1;
       }
-      currentT += stepSize;
+      currentT += 0.035;
       
       let station = characterStations[st.groupIndex];
-      // 2. Dibuja al gatito ayudante pintando abajo
-      drawStationaryCharacter(station.x * fg.width, station.y * fg.height, targetX, targetY, true);
+      // GATITO AYUDANTE PINTANDO ABAJO
+      drawHelper(fCtx, station.x * fg.width, station.y * fg.height, targetX, targetY, true);
       
       if (currentT > 1) { currentT = 0; currentStrokeIdx++; }
       anim = requestAnimationFrame(loop);
     } else {
       let station = characterStations[5];
-      // El gatito ayudante termina y guarda el spray
-      drawStationaryCharacter(station.x * fg.width, station.y * fg.height, station.x * fg.width + 20, station.y * fg.height - 20, false);
+      drawHelper(fCtx, station.x * fg.width, station.y * fg.height, station.x * fg.width + 10, station.y * fg.height - 10, false);
       
-      letterTimeout = setTimeout(() => {
-        letterOverlay.classList.add('show');
-      }, 2000);
+      if(!letterOverlay.classList.contains('show')) {
+        letterTimeout = setTimeout(() => { letterOverlay.classList.add('show'); }, 2000);
+      }
+      anim = requestAnimationFrame(loop); // Seguir animando a Samuel aunque el grafiti termine
     }
   })();
 }
 
-function closeLetter() {
-  letterOverlay.classList.remove('show');
-}
+function closeLetter() { letterOverlay.classList.remove('show'); }
 
 function clearCanv() {
-  cancelAnimationFrame(anim);
-  clearTimeout(letterTimeout);
+  cancelAnimationFrame(anim); clearTimeout(letterTimeout);
   letterOverlay.classList.remove('show');
   pCtx.clearRect(0, 0, paint.width, paint.height);
   fCtx.clearRect(0, 0, fg.width, fg.height);
