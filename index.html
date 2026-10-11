@@ -69,7 +69,7 @@
     box-shadow: 0 0 15px rgba(123,31,162,0.8);
   }
 
-  /* CARTA DE DESPEDIDA ESTILIZADA - LA SOLUCIÓN */
+  /* CARTA DE DESPEDIDA ESTILIZADA */
   #letter-overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -87,7 +87,7 @@
     pointer-events: auto;
   }
   .letter-content {
-    background: #15101c; /* Fondo oscuro gótico para legibilidad */
+    background: #15101c; 
     border: 2px solid #7b1fa2;
     border-radius: 10px;
     padding: 30px;
@@ -98,13 +98,13 @@
   }
   .letter-content .greeting {
     font-size: 1.8rem;
-    color: #ce93d8; /* Color claro para resaltar */
+    color: #ce93d8; 
     margin-bottom: 15px;
     font-weight: bold;
     text-align: left;
   }
   .letter-content p {
-    color: #e1bee7; /* Color claro para resaltar */
+    color: #e1bee7; 
     font-size: 1.4rem;
     line-height: 1.5;
     margin: 10px 0;
@@ -112,7 +112,7 @@
   }
   .letter-content .signature {
     font-size: 1.6rem;
-    color: #ce93d8; /* Color claro para resaltar */
+    color: #ce93d8; 
     margin-top: 25px;
     font-weight: bold;
     text-align: right;
@@ -128,7 +128,6 @@
 <body>
 <h3>SIEMPRE EN MI CORAZÓN</h3>
 <div id="wall">
-  <!-- Capas separadas para máximo rendimiento -->
   <canvas id="bg"></canvas>
   <canvas id="paint"></canvas>
   <canvas id="fg"></canvas>
@@ -263,13 +262,22 @@ function drawSamuelAnimated(ctx, x, y, time) {
   // Animación de parpadeo (Cierra los ojos muy rápido de vez en cuando)
   let blink = (time % 200 < 5) ? 0.1 : 1; 
   ctx.save();
-  ctx.translate(10, -47);
+  ctx.translate(4, -46); // Nos centramos en la cara para dibujar los 2 ojos
   ctx.scale(1, blink);
-  // Ojo grande mirando a la luna
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(1, -0.5, 1.5, 0, Math.PI*2); ctx.fill();
-  ctx.restore();
   
+  // OJO IZQUIERDO (¡El que faltaba!)
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-3, 0, 3.8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(-2, -0.5, 1.5, 0, Math.PI*2); ctx.fill();
+
+  // OJO DERECHO
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(5, -1, 4.2, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(6, -1.5, 1.5, 0, Math.PI*2); ctx.fill();
+  
+  ctx.restore();
   ctx.restore();
 }
 
@@ -336,7 +344,7 @@ const letterGroups = [
 const allStrokes = [];
 letterGroups.forEach((group, gIndex) => { group.forEach(stroke => { allStrokes.push({ ...stroke, groupIndex: gIndex }); }); });
 
-// Posiciones del gatito pequeño (Subidas a 0.88 para que se vean bien en cualquier teléfono)
+// Posiciones del gatito pequeño
 const characterStations = [ {x: 0.08, y: 0.88}, {x: 0.23, y: 0.88}, {x: 0.40, y: 0.88}, {x: 0.56, y: 0.88}, {x: 0.70, y: 0.88}, {x: 0.83, y: 0.88} ];
 
 function spray(x, y, color, radius, count) {
@@ -383,7 +391,6 @@ function start() {
 
     if (currentStrokeIdx < allStrokes.length) {
       let st = allStrokes[currentStrokeIdx];
-      let stepSize = 0.035; 
       let targetX = 0, targetY = 0;
       
       let x = (st.x + (st.ex - st.x) * currentT) * paint.width;
