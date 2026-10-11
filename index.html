@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es"> 
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -109,82 +109,76 @@ function drawBackground(time) {
   bCtx.fillStyle = grad;
   bCtx.fillRect(0, 0, w, h);
 
-  // 2. Luna gigante brillante (movida ligeramente arriba para despejar la colina)
+  // 2. Luna gigante brillante
   bCtx.save();
   bCtx.shadowColor = 'rgba(210, 235, 255, 0.9)';
-  bCtx.shadowBlur = 60;
+  bCtx.shadowBlur = 50;
   bCtx.fillStyle = '#e1f2ff';
-  bCtx.beginPath(); bCtx.arc(w * 0.72, h * 0.28, 85, 0, Math.PI * 2); bCtx.fill();
+  // Luna movida hacia la derecha y arriba para que nada la tape
+  bCtx.beginPath(); bCtx.arc(w * 0.80, h * 0.25, 80, 0, Math.PI * 2); bCtx.fill();
   bCtx.restore();
-  
-  // Cráteres de la luna
-  bCtx.fillStyle = 'rgba(165, 190, 205, 0.3)';
-  bCtx.beginPath(); bCtx.arc(w * 0.68, h * 0.23, 22, 0, Math.PI * 2); bCtx.fill();
-  bCtx.beginPath(); bCtx.arc(w * 0.76, h * 0.35, 15, 0, Math.PI * 2); bCtx.fill();
-  bCtx.beginPath(); bCtx.arc(w * 0.72, h * 0.30, 10, 0, Math.PI * 2); bCtx.fill();
 
-  // 3. Colina en espiral (Corregida para que no tape la luna)
+  // 3. NUEVA COLINA EN ESPIRAL (Solución a la mancha negra)
   bCtx.fillStyle = '#040507';
-  bCtx.strokeStyle = '#150822';
-  bCtx.lineWidth = 4;
   bCtx.beginPath();
-  bCtx.moveTo(w * 0.35, h * 0.6); // Inicio desde la izquierda
-  bCtx.quadraticCurveTo(w * 0.55, h * 0.45, w * 0.75, h * 0.48); // Subida
-  bCtx.bezierCurveTo(w * 0.88, h * 0.50, w * 0.90, h * 0.38, w * 0.82, h * 0.35); // Bucle exterior
-  bCtx.bezierCurveTo(w * 0.76, h * 0.33, w * 0.74, h * 0.42, w * 0.80, h * 0.44); // Bucle interior
-  bCtx.lineTo(w, h * 0.6); // Baja a la derecha
-  bCtx.closePath();
+  // Base de la colina (sin bucles extraños)
+  bCtx.moveTo(-50, h * 0.6); 
+  bCtx.quadraticCurveTo(w * 0.4, h * 0.35, w * 0.65, h * 0.45); // Sube hasta la punta
+  bCtx.quadraticCurveTo(w * 0.8, h * 0.55, w + 50, h * 0.6); // Baja a la derecha
+  bCtx.lineTo(-50, h * 0.6);
   bCtx.fill();
+  
+  // La espiral dibujada solo como línea gruesa para evitar que se rellene el centro
+  bCtx.strokeStyle = '#040507';
+  bCtx.lineWidth = 15;
+  bCtx.lineCap = "round";
+  bCtx.beginPath();
+  bCtx.moveTo(w * 0.64, h * 0.44);
+  bCtx.bezierCurveTo(w * 0.75, h * 0.35, w * 0.72, h * 0.22, w * 0.62, h * 0.25);
+  bCtx.bezierCurveTo(w * 0.54, h * 0.28, w * 0.56, h * 0.38, w * 0.61, h * 0.36);
   bCtx.stroke();
 
-  // 4. Árbol gótico retorcido (Corregido para verse más grueso e integrado)
+  // 4. Árbol gótico retorcido a la izquierda
   bCtx.strokeStyle = '#020304';
   bCtx.lineCap = 'round';
   bCtx.lineJoin = 'round';
   
   // Tronco principal
-  bCtx.lineWidth = 18;
+  bCtx.lineWidth = 20;
   bCtx.beginPath();
-  bCtx.moveTo(w * 0.08, h * 0.6);
-  bCtx.quadraticCurveTo(w * 0.12, h * 0.35, w * 0.05, h * 0.15);
+  bCtx.moveTo(w * 0.1, h * 0.6);
+  bCtx.quadraticCurveTo(w * 0.15, h * 0.35, w * 0.05, h * 0.15);
   bCtx.stroke();
   
-  // Rama 1 (Gruesa)
-  bCtx.lineWidth = 10;
+  // Ramas
+  bCtx.lineWidth = 8;
   bCtx.beginPath();
-  bCtx.moveTo(w * 0.10, h * 0.40);
-  bCtx.quadraticCurveTo(w * 0.20, h * 0.30, w * 0.25, h * 0.35);
-  bCtx.stroke();
-
-  // Rama 2 (Delgada)
-  bCtx.lineWidth = 5;
-  bCtx.beginPath();
-  bCtx.moveTo(w * 0.09, h * 0.25);
-  bCtx.quadraticCurveTo(w * 0.15, h * 0.18, w * 0.12, h * 0.08);
+  bCtx.moveTo(w * 0.13, h * 0.40);
+  bCtx.quadraticCurveTo(w * 0.25, h * 0.30, w * 0.30, h * 0.35);
   bCtx.stroke();
 
   let floatOffset = Math.sin(time * 0.035) * 6;
 
-  // 5. JACK SKELLINGTON (Corregido - Cuerpo conectado y pies en el horizonte)
+  // 5. JACK SKELLINGTON (Corregido - Ya no flota)
   bCtx.save();
-  // Posicionamos a Jack sobre la barda
-  let jx = w * 0.28, jy = h * 0.5 - 20 + floatOffset; 
+  // Posicionamos a Jack firmemente sobre la barda
+  let jx = w * 0.35, jy = h * 0.6 - 110 + floatOffset; 
   
-  // Cuerpo (Triángulo estilizado que baja hasta la pared)
+  // Cuerpo
   bCtx.fillStyle = '#08080d';
   bCtx.beginPath();
-  bCtx.moveTo(jx, jy); // Cuello
-  bCtx.lineTo(jx - 12, h * 0.6); // Pie izquierdo
-  bCtx.lineTo(jx + 12, h * 0.6); // Pie derecho
+  bCtx.moveTo(jx, jy + 20); // Cuello
+  bCtx.lineTo(jx - 10, h * 0.6); // Pie izquierdo en la barda
+  bCtx.lineTo(jx + 10, h * 0.6); // Pie derecho en la barda
   bCtx.closePath();
   bCtx.fill();
   
   // Rayas blancas del traje
   bCtx.strokeStyle = '#e2e8f0'; 
   bCtx.lineWidth = 1;
-  for(let i = -10; i <= 10; i += 3) {
+  for(let i = -8; i <= 8; i += 4) {
     bCtx.beginPath(); 
-    bCtx.moveTo(jx + i*0.2, jy + 5); 
+    bCtx.moveTo(jx + (i*0.2), jy + 25); 
     bCtx.lineTo(jx + i, h * 0.6); 
     bCtx.stroke();
   }
@@ -192,28 +186,28 @@ function drawBackground(time) {
   // Pajarita murciélago
   bCtx.fillStyle = '#020204';
   bCtx.beginPath(); 
-  bCtx.moveTo(jx, jy + 4); 
-  bCtx.lineTo(jx - 30, jy - 8); bCtx.lineTo(jx - 20, jy + 15); 
-  bCtx.lineTo(jx, jy + 8); 
-  bCtx.lineTo(jx + 20, jy + 15); bCtx.lineTo(jx + 30, jy - 8); 
+  bCtx.moveTo(jx, jy + 25); 
+  bCtx.lineTo(jx - 35, jy + 10); bCtx.lineTo(jx - 20, jy + 40); 
+  bCtx.lineTo(jx, jy + 30); 
+  bCtx.lineTo(jx + 20, jy + 40); bCtx.lineTo(jx + 35, jy + 10); 
   bCtx.closePath(); bCtx.fill();
   
   // Calavera
   bCtx.fillStyle = '#f0f4f8';
-  bCtx.beginPath(); bCtx.arc(jx, jy - 16, 20, 0, Math.PI * 2); bCtx.fill();
+  bCtx.beginPath(); bCtx.arc(jx, jy, 22, 0, Math.PI * 2); bCtx.fill();
   
   // Ojos hundidos
   bCtx.fillStyle = '#020203';
   bCtx.beginPath(); 
-  bCtx.ellipse(jx - 7, jy - 20, 6, 8, -0.2, 0, Math.PI * 2); 
-  bCtx.ellipse(jx + 7, jy - 20, 6, 8, 0.2, 0, Math.PI * 2); 
+  bCtx.ellipse(jx - 8, jy - 5, 6, 9, -0.2, 0, Math.PI * 2); 
+  bCtx.ellipse(jx + 8, jy - 5, 6, 9, 0.2, 0, Math.PI * 2); 
   bCtx.fill();
   
   // Sonrisa cosida
   bCtx.lineWidth = 1.5; bCtx.strokeStyle = '#020203';
-  bCtx.beginPath(); bCtx.arc(jx, jy - 10, 12, 0.1 * Math.PI, 0.9 * Math.PI); bCtx.stroke();
-  for(let i = -8; i <= 8; i += 3) {
-    bCtx.beginPath(); bCtx.moveTo(jx + i, jy - 13); bCtx.lineTo(jx + i, jy - 6); bCtx.stroke();
+  bCtx.beginPath(); bCtx.arc(jx, jy + 10, 14, 0.1 * Math.PI, 0.9 * Math.PI); bCtx.stroke();
+  for(let i = -10; i <= 10; i += 3) {
+    bCtx.beginPath(); bCtx.moveTo(jx + i, jy + 7); bCtx.lineTo(jx + i, jy + 15); bCtx.stroke();
   }
   bCtx.restore();
 
@@ -459,4 +453,4 @@ resize();
 drawBackground(0);
 </script>
 </body>
-</html>
+</html> 
